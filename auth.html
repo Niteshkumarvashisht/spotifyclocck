@@ -1,27 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Spotify Auth</title>
+    <title>Spotify Auth Handler</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #121212;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            padding: 2rem;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            max-width: 500px;
+        }
+        .success {
+            color: #1DB954;
+        }
+        .error {
+            color: #e22134;
+        }
+        .debug {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <div id="status-message">
+            <h1>Processing Authentication...</h1>
+        </div>
+        <div id="debug-info" class="debug"></div>
+    </div>
+
     <script>
+        function displayStatus(message, isError = false) {
+            const statusEl = document.getElementById('status-message');
+            statusEl.innerHTML = `<h1 class="${isError ? 'error' : 'success'}">${message}</h1>`;
+        }
+
+        function displayDebugInfo(info) {
+            document.getElementById('debug-info').textContent = info;
+        }
+
         try {
+            // Debug output
+            console.log('Full URL:', window.location.href);
+            console.log('Hash:', window.location.hash);
+            
             const hash = window.location.hash.substring(1);
             const params = new URLSearchParams(hash);
             
+            displayDebugInfo(`Hash parameters: ${hash}`);
+
             if (params.has('access_token')) {
-                localStorage.setItem('spotify_token', params.get('access_token'));
-                localStorage.setItem('spotify_token_expiry', Date.now() + 3600 * 1000); // 1 hour expiry
-                window.location.href = 'index.html';
+                const token = params.get('access_token');
+                const expiresIn = params.get('expires_in') || 3600;
+                
+                // Store token and expiry
+                localStorage.setItem('spotify_token', token);
+                localStorage.setItem('spotify_token_expiry', Date.now() + (expiresIn * 1000));
+                
+                displayStatus('Authentication Successful! Redirecting...');
+                console.log('Auth successful, token stored');
+                
+                // Redirect to main app after short delay
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+                
+            } else if (params.has('error')) {
+                const error = params.get('error');
+                displayStatus(`Error: ${error}`, true);
+                console.error('Auth error:', error, 'Description:', params.get('error_description'));
+                
+                // Show retry button for user
+                const retryBtn = document.createElement('button');
+                retryBtn.textContent = 'Retry Login';
+                retryBtn.style.marginTop = '20px';
+                retryBtn.onclick = () => window.location.href = 'index.html';
+                document.getElementById('status-message').appendChild(retryBtn);
+                
             } else {
-                document.body.innerHTML = '<h1>Authentication Error</h1>';
-                if (params.has('error')) {
-                    console.error('Spotify Auth Error:', params.get('error'));
-                }
+                displayStatus('No authentication data found', true);
+                console.warn('No auth data in URL');
+                
+                // Provide link back to app
+                const homeLink = document.createElement('a');
+                homeLink.href = 'index.html';
+                homeLink.textContent = 'Return to App';
+                homeLink.style.marginTop = '20px';
+                homeLink.style.display = 'block';
+                document.getElementById('status-message').appendChild(homeLink);
             }
+            
         } catch (error) {
+            displayStatus('Authentication Processing Failed', true);
             console.error('Auth processing error:', error);
-            document.body.innerHTML = '<h1>Authentication Failed</h1>';
+            displayDebugInfo(`Error: ${error.message}`);
+            
+            // Fallback redirect if possible
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 3000);
         }
     </script>
 </body>
