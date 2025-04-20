@@ -1,7 +1,7 @@
 
 document.getElementById('login-btn').addEventListener('click', () => {
     const CLIENT_ID = 'c2a56c8619af49fea91a155f4d32752b';
-    const REDIRECT_URI = encodeURIComponent('https://niteshkumarvashisht.github.io/spotifyclock/auth.html');
+    const REDIRECT_URI = encodeURIComponent('https://niteshkumarvashisht.github.io/spotifyclocck/auth.html');
     const SCOPES = encodeURIComponent([
         'streaming',
         'user-read-email',
